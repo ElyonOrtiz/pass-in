@@ -4,14 +4,17 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import rockeatseat.com.passin.domain.attendee.Attendee;
 import rockeatseat.com.passin.domain.envent.Event;
+import rockeatseat.com.passin.domain.envent.exceptions.EventIsFullException;
 import rockeatseat.com.passin.domain.envent.exceptions.EventNotFoundException;
+import rockeatseat.com.passin.dto.attendee.AttendeeIdDTO;
+import rockeatseat.com.passin.dto.attendee.AttendeeRequestDTO;
 import rockeatseat.com.passin.dto.event.EventIdDTO;
 import rockeatseat.com.passin.dto.event.EventRequestDTO;
 import rockeatseat.com.passin.dto.event.EventResponseDTO;
-import rockeatseat.com.passin.repositories.AttendeeRepository;
 import rockeatseat.com.passin.repositories.EventRepository;
 
 import java.text.Normalizer;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -38,6 +41,28 @@ public class EventService {
         return new EventIdDTO(newEvent.getId());
     }
 
+    public AttendeeIdDTO registerAttendeeOnEvent(String eventId, AttendeeRequestDTO attendeeRequestDTO){
+        this.attendeeService.verifyAttendeeSubscription(attendeeRequestDTO.email(), eventId);
+
+        Event event = this.getEventById(eventId );
+        List<Attendee> attendeeList = this.attendeeService.getAllAttendeeFromEvent(eventId);
+
+        if(event.getMaximumAttendees() <= attendeeList.size()) throw new EventIsFullException("Event is full");
+        Attendee newAttendee = new Attendee();
+
+        newAttendee.setName(attendeeRequestDTO.name());
+        newAttendee.setEmail(attendeeRequestDTO.email());
+        newAttendee.setEmail(attendeeRequestDTO.email());
+        newAttendee.setEvent(event);
+        newAttendee.setCreatedAt(LocalDateTime.now());
+        this.attendeeService.registerAttendee(newAttendee);
+
+        return new AttendeeIdDTO(newAttendee.getId());
+    }
+
+    private Event getEventById(String eventId) {
+        return this.eventRepository.findById(eventId).orElseThrow(() -> new EventNotFoundException("Event nor found with id:" + eventId ));
+    }
     private String createSlug(String text){
          String normalized = Normalizer.normalize(text, Normalizer.Form.NFD);
          return normalized.replaceAll("[\\p{InCOMBINING_DIACRITICAL_MARKS}]", "")
