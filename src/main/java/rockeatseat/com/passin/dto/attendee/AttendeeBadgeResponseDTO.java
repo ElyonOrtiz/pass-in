@@ -1,4 +1,4 @@
 package rockeatseat.com.passin.dto.attendee;
 
-public record AttendeeBadgeResponseDTO(BadgeDTO badge) {
+public record AttendeeBadgeResponseDTO(AttendeeBadgeDTO badge) {
 }
